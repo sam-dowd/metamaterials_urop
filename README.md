@@ -1,4 +1,6 @@
 ** PROJECT OVERVIEW **  
+
+To see logged progress, look at https://paper.dropbox.com/doc/Lab-Notebook--CnvEMUl7ODegXkd9xL5I34ANAQ-bl14GM5ck2vs7taktel1k
   
 Chromatic dispersion, which describes the wavelength-dependent propagation of light, is crucial for  various applications in imaging, communications, spectroscopy, and nonlinear optics. However, engineering dispersion in complex photonic structures like metamaterials and photonic crystals is computationally intensive and non-intuitive, requiring exhaustive numerical simulations. A key challenge is designing broadband achromatic metasurfaces, where each meta-atom’s geometry must be carefully optimized to achieve the desired group delay and dispersion. Traditional methods rely on brute-force modeling techniques, which are not only time-consuming but also limited to specific material and geometric configurations, necessitating repeated simulations for different design parameters. This inefficiency makes it difficult to explore the full potential of dispersion-engineered devices and predict their practical performance limits.  
   
