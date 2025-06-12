@@ -136,7 +136,6 @@ def batch_mean_std(dataset, indices, batch_size=10000):
     std = np.std(data, axis=0)
     return mean, std
 
-
 print("Scanning weights for mask condition...")
 
 with h5py.File(h5_path, 'r') as f:

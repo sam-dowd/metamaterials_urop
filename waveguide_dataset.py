@@ -105,7 +105,6 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 
-
 def quarter(pattern):
     return pattern[:32, :32]  # downsample to 32x32
 
