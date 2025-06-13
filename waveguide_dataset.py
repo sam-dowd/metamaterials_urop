@@ -105,12 +105,13 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 
+
 def quarter(pattern):
     return pattern[:32, :32]  # downsample to 32x32
 
 
 class WaveguideDataset(Dataset):
-    def __init__(self, h5_path, stats_path="waveguide_stats_params_norm.npz"):
+    def __init__(self, h5_path, stats_path="waveguide_stats_log_norm_above90.npz"):
         self.h5_path = h5_path
 
         # Load precomputed normalization stats and indices
@@ -126,7 +127,30 @@ class WaveguideDataset(Dataset):
     def __len__(self):
         return len(self.indices)
 
-    def __getitem__(self, idx):
+    # def __getitem__(self, idx): # cond and params z score normalized
+    #     with h5py.File(self.h5_path, 'r') as f:
+    #         real_idx = self.indices[idx]
+
+    #         pattern = torch.tensor(
+    #             quarter(f['pattern_train'][real_idx]), dtype=torch.float32).unsqueeze(0)
+    #         weight = torch.tensor(
+    #             f['weight_train'][real_idx], dtype=torch.float32)
+    #         mode = torch.tensor(
+    #             f['neff_train'][real_idx], dtype=torch.float32)
+    #         params = torch.tensor(
+    #             f['params_train'][real_idx], dtype=torch.float32)
+
+    #         # Normalize conditional input (mode + weight)
+    #         weight_norm = (weight - torch.tensor(self.meanw, dtype=torch.float32)) / \
+    #             torch.tensor(self.stdw, dtype=torch.float32)
+    #         mode_norm = (mode - torch.tensor(self.meanm, dtype=torch.float32)) / \
+    #             torch.tensor(self.stdm, dtype=torch.float32)
+    #         cond = torch.cat([mode_norm, weight_norm], dim=0)
+    #         params_norm = (params - torch.tensor(self.meanp, dtype=torch.float32)) / \
+    #             torch.tensor(self.stdp, dtype=torch.float32)
+
+    #     return cond, params_norm, pattern
+    def __getitem__(self, idx):  # cond and params log normalized
         with h5py.File(self.h5_path, 'r') as f:
             real_idx = self.indices[idx]
 
@@ -139,17 +163,22 @@ class WaveguideDataset(Dataset):
             params = torch.tensor(
                 f['params_train'][real_idx], dtype=torch.float32)
 
-            # Normalize conditional input (mode + weight)
-            weight_norm = (weight - torch.tensor(self.meanw, dtype=torch.float32)) / \
-                torch.tensor(self.stdw, dtype=torch.float32)
-            mode_norm = (mode - torch.tensor(self.meanm, dtype=torch.float32)) / \
-                torch.tensor(self.stdm, dtype=torch.float32)
-            cond = torch.cat([mode_norm, weight_norm], dim=0)
-            params_norm = (params - torch.tensor(self.meanp, dtype=torch.float32)) / \
-                torch.tensor(self.stdp, dtype=torch.float32)
+            # Apply log1p and normalize
+            mode_log = torch.log1p(mode)
+            weight_log = torch.log1p(weight)
+            params_log = torch.log1p(params)
 
-        return cond, params_norm, pattern
-    # def __getitem__(self, idx):
+            mode_norm = (mode_log - torch.tensor(self.meanm_log)
+                         ) / torch.tensor(self.stdm_log)
+            weight_norm = (weight_log - torch.tensor(self.meanw_log)
+                           ) / torch.tensor(self.stdw_log)
+            params_norm = (params_log - torch.tensor(self.meanp_log)
+                           ) / torch.tensor(self.stdp_log)
+
+            cond = torch.cat([mode_norm, weight_norm], dim=0)
+
+        return cond.float(), params_norm.float(), pattern
+    # def __getitem__(self, idx): # normalized and sorted by mode
     #     with h5py.File(self.h5_path, 'r') as f:
     #         real_idx = self.indices[idx]
 
@@ -180,7 +209,7 @@ class WaveguideDataset(Dataset):
 
     #     return cond, params, pattern
 
-    # def __getitem__(self, idx):
+    # def __getitem__(self, idx): # normalized and sorted by weight
     #     with h5py.File(self.h5_path, 'r') as f:
     #         real_idx = self.indices[idx]
 
@@ -207,33 +236,65 @@ class WaveguideDataset(Dataset):
     #         cond = torch.cat([mode_norm, weight_norm], dim=0)
 
     #     return cond, params, pattern
-
     def denormalize_cond(self, cond):
         """
-        Input: normalized cond tensor [8] or [B, 8]
-        Output: unnormalized tensor with same shape
+        Reverts normalized cond (modes + weights) back to original scale.
         """
         if cond.dim() == 1:
-            mode_unnorm = cond[:4] * \
-                torch.tensor(self.stdm, dtype=torch.float32) + \
-                torch.tensor(self.meanm, dtype=torch.float32)
-            weight_unnorm = cond[4:] * \
-                torch.tensor(self.stdw, dtype=torch.float32) + \
-                torch.tensor(self.meanw, dtype=torch.float32)
+            mode_log = cond[:4] * \
+                torch.tensor(self.stdm_log) + torch.tensor(self.meanm_log)
+            weight_log = cond[4:] * \
+                torch.tensor(self.stdw_log) + torch.tensor(self.meanw_log)
         else:
-            mode_unnorm = cond[:, :4] * torch.tensor(self.stdm, dtype=torch.float32).unsqueeze(
-                0) + torch.tensor(self.meanm, dtype=torch.float32).unsqueeze(0)
-            weight_unnorm = cond[:, 4:] * torch.tensor(self.stdw, dtype=torch.float32).unsqueeze(
-                0) + torch.tensor(self.meanw, dtype=torch.float32).unsqueeze(0)
+            mode_log = cond[:, :4] * torch.tensor(self.stdm_log).unsqueeze(
+                0) + torch.tensor(self.meanm_log).unsqueeze(0)
+            weight_log = cond[:, 4:] * torch.tensor(self.stdw_log).unsqueeze(
+                0) + torch.tensor(self.meanw_log).unsqueeze(0)
 
-        return torch.cat([mode_unnorm, weight_unnorm], dim=-1)
-    
+        mode = torch.expm1(mode_log)
+        weight = torch.expm1(weight_log)
+        return torch.cat([mode, weight], dim=-1)
+
     def denormalize_params(self, params):
+        """
+        Reverts normalized params back to original scale.
+        """
         if params.dim() == 1:
-            params_unnorm = params * \
-                torch.tensor(self.stdp, dtype=torch.float32) + \
-                torch.tensor(self.meanp, dtype=torch.float32)
+            params_log = params * \
+                torch.tensor(self.stdp_log) + torch.tensor(self.meanp_log)
         else:
-            params_unnorm = params * torch.tensor(self.stdp, dtype=torch.float32).unsqueeze(
-                0) + torch.tensor(self.meanp, dtype=torch.float32).unsqueeze(0)
-        return params_unnorm
+            params_log = params * \
+                torch.tensor(self.stdp_log).unsqueeze(0) + \
+                torch.tensor(self.meanp_log).unsqueeze(0)
+
+        return torch.expm1(params_log)
+
+    # def denormalize_cond(self, cond):
+    #     """
+    #     Input: normalized cond tensor [8] or [B, 8]
+    #     Output: unnormalized tensor with same shape
+    #     """
+    #     if cond.dim() == 1:
+    #         mode_unnorm = cond[:4] * \
+    #             torch.tensor(self.stdm, dtype=torch.float32) + \
+    #             torch.tensor(self.meanm, dtype=torch.float32)
+    #         weight_unnorm = cond[4:] * \
+    #             torch.tensor(self.stdw, dtype=torch.float32) + \
+    #             torch.tensor(self.meanw, dtype=torch.float32)
+    #     else:
+    #         mode_unnorm = cond[:, :4] * torch.tensor(self.stdm, dtype=torch.float32).unsqueeze(
+    #             0) + torch.tensor(self.meanm, dtype=torch.float32).unsqueeze(0)
+    #         weight_unnorm = cond[:, 4:] * torch.tensor(self.stdw, dtype=torch.float32).unsqueeze(
+    #             0) + torch.tensor(self.meanw, dtype=torch.float32).unsqueeze(0)
+
+    #     return torch.cat([mode_unnorm, weight_unnorm], dim=-1)
+
+    # def denormalize_params(self, params):
+    #     if params.dim() == 1:
+    #         params_unnorm = params * \
+    #             torch.tensor(self.stdp, dtype=torch.float32) + \
+    #             torch.tensor(self.meanp, dtype=torch.float32)
+    #     else:
+    #         params_unnorm = params * torch.tensor(self.stdp, dtype=torch.float32).unsqueeze(
+    #             0) + torch.tensor(self.meanp, dtype=torch.float32).unsqueeze(0)
+    #     return params_unnorm

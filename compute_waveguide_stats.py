@@ -126,6 +126,19 @@ def online_mean_std(dataset, indices):
     return mean, std
 
 
+def batch_log_mean_std(dataset, indices, batch_size=10000):
+    data = []
+    for i in tqdm(range(0, len(indices), batch_size), desc="Loading data"):
+        batch_inds = indices[i:i+batch_size]
+        batch = dataset[batch_inds].astype(np.float64)
+        batch_log = np.log1p(batch)
+        data.append(batch_log)
+    data = np.concatenate(data, axis=0)
+    mean = np.mean(data, axis=0)
+    std = np.std(data, axis=0)
+    return mean, std
+
+
 def batch_mean_std(dataset, indices, batch_size=10000):
     data = []
     for i in tqdm(range(0, len(indices), batch_size), desc="Loading data"):
@@ -136,6 +149,7 @@ def batch_mean_std(dataset, indices, batch_size=10000):
     std = np.std(data, axis=0)
     return mean, std
 
+
 print("Scanning weights for mask condition...")
 
 with h5py.File(h5_path, 'r') as f:
@@ -144,7 +158,8 @@ with h5py.File(h5_path, 'r') as f:
 
     for i in range(0, n_samples, chunk_size):
         chunk = weight_dset[i:i+chunk_size]
-        mask_chunk = np.sum(chunk, axis=1) < 100
+        total_weights = np.sum(chunk, axis=1)
+        mask_chunk = (total_weights >= 90) & (total_weights <= 100)
         valid_indices = np.where(mask_chunk)[0] + i  # shift to global index
         mask_list.append(valid_indices)
         total_samples += len(valid_indices)
@@ -156,10 +171,10 @@ with h5py.File(h5_path, 'r') as f:
 
     # meanw, stdw = online_mean_std(f['weight_train'], indices)
     # meanm, stdm = online_mean_std(f['neff_train'], indices)
-    meanw, stdw = batch_mean_std(f['weight_train'], indices)
-    meanm, stdm = batch_mean_std(f['neff_train'], indices)
-    meanp, stdp = batch_mean_std(f['params_train'], indices)
+    meanw, stdw = batch_log_mean_std(f['weight_train'], indices)
+    meanm, stdm = batch_log_mean_std(f['neff_train'], indices)
+    meanp, stdp = batch_log_mean_std(f['params_train'], indices)
 
-np.savez("waveguide_stats_params_norm.npz", meanw=meanw, stdw=stdw,
+np.savez("waveguide_stats_log_norm_above90.npz", meanw=meanw, stdw=stdw,
          meanm=meanm, stdm=stdm, meanp=meanp, stdp=stdp, indices=indices)
-print("Saved waveguide_stats_params_norm.npz")
+print("Saved waveguide_stats_log_norm_above90.npz")
