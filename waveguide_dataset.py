@@ -168,12 +168,12 @@ class WaveguideDataset(Dataset):
             weight_log = torch.log1p(weight)
             params_log = torch.log1p(params)
 
-            mode_norm = (mode_log - torch.tensor(self.meanm_log)
-                         ) / torch.tensor(self.stdm_log)
-            weight_norm = (weight_log - torch.tensor(self.meanw_log)
-                           ) / torch.tensor(self.stdw_log)
-            params_norm = (params_log - torch.tensor(self.meanp_log)
-                           ) / torch.tensor(self.stdp_log)
+            mode_norm = (mode_log - torch.tensor(self.meanm)
+                         ) / torch.tensor(self.stdm)
+            weight_norm = (weight_log - torch.tensor(self.meanw)
+                           ) / torch.tensor(self.stdw)
+            params_norm = (params_log - torch.tensor(self.meanp)
+                           ) / torch.tensor(self.stdp)
 
             cond = torch.cat([mode_norm, weight_norm], dim=0)
 
@@ -242,14 +242,14 @@ class WaveguideDataset(Dataset):
         """
         if cond.dim() == 1:
             mode_log = cond[:4] * \
-                torch.tensor(self.stdm_log) + torch.tensor(self.meanm_log)
+                torch.tensor(self.stdm) + torch.tensor(self.meanm)
             weight_log = cond[4:] * \
-                torch.tensor(self.stdw_log) + torch.tensor(self.meanw_log)
+                torch.tensor(self.stdw) + torch.tensor(self.meanw)
         else:
-            mode_log = cond[:, :4] * torch.tensor(self.stdm_log).unsqueeze(
-                0) + torch.tensor(self.meanm_log).unsqueeze(0)
-            weight_log = cond[:, 4:] * torch.tensor(self.stdw_log).unsqueeze(
-                0) + torch.tensor(self.meanw_log).unsqueeze(0)
+            mode_log = cond[:, :4] * torch.tensor(self.stdm).unsqueeze(
+                0) + torch.tensor(self.meanm).unsqueeze(0)
+            weight_log = cond[:, 4:] * torch.tensor(self.stdw).unsqueeze(
+                0) + torch.tensor(self.meanw).unsqueeze(0)
 
         mode = torch.expm1(mode_log)
         weight = torch.expm1(weight_log)
@@ -261,11 +261,11 @@ class WaveguideDataset(Dataset):
         """
         if params.dim() == 1:
             params_log = params * \
-                torch.tensor(self.stdp_log) + torch.tensor(self.meanp_log)
+                torch.tensor(self.stdp) + torch.tensor(self.meanp)
         else:
             params_log = params * \
-                torch.tensor(self.stdp_log).unsqueeze(0) + \
-                torch.tensor(self.meanp_log).unsqueeze(0)
+                torch.tensor(self.stdp).unsqueeze(0) + \
+                torch.tensor(self.meanp).unsqueeze(0)
 
         return torch.expm1(params_log)
 
