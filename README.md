@@ -1,4 +1,4 @@
-** PROJECT OVERVIEW **  
+## ** PROJECT OVERVIEW **  
 
 To see logged progress, look at https://paper.dropbox.com/doc/Lab-Notebook--CnvEMUl7ODegXkd9xL5I34ANAQ-bl14GM5ck2vs7taktel1k
   
@@ -8,7 +8,7 @@ To overcome these limitations, a new inverse design approach is proposed, levera
   
 This project is a continuation of the project that I began this spring. I have already created a Generative Adversarial Network, and it is being trained this week. Once it is trained, it will be used to predict the waveguide shape and substrate atom to determine the wave modes at a specific wavelength. From there, it will be compared to simulation and/or experiment, before the task is extended to creating full arrays of waveguides for lenses for specific focal distances. 
   
-** PERSONAL STATEMENT / GOALS **  
+## ** PERSONAL STATEMENT / GOALS **  
   
 I’m excited about this project because it combines two areas I’m passionate about: physics and artificial intelligence. The intersection of these fields is fascinating to me, and I’m eager to contribute to a project that uses advanced deep learning techniques to tackle complex physical problems.	 
   
