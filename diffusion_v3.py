@@ -229,4 +229,94 @@ class improved_DDPM(nn.Module):
 
         return x, np.array(store)
 
-                         
+class CondSequential(nn.Module):
+    """Sequential that passes (x, cond) to each sub-module."""
+    def __init__(self, *layers):
+        super().__init__()
+        self.layers = nn.ModuleList(layers)
+
+    def forward(self, x, cond):
+        for layer in self.layers:
+            x = layer(x, cond)
+        return x
+    
+class ImprovedUNet2(nn.Module):
+    def __init__(self, in_channels=1, base=128, cond_dim=8, time_dim=128):
+        super().__init__()
+        self.time_dim = time_dim
+        self.time_embed = nn.Sequential(
+            nn.Linear(time_dim, time_dim),
+            nn.GELU(),
+            nn.Linear(time_dim, cond_dim)
+        )
+
+        # ─── Encoder ───────────────────────────────────────────────
+        self.enc1 = CondSequential(
+            ImprovedResBlock(in_channels, base, cond_dim),
+            ImprovedResBlock(base, base, cond_dim)
+        )
+        self.enc2 = CondSequential(
+            ImprovedResBlock(base, base*2, cond_dim, use_attention=True),
+            ImprovedResBlock(base*2, base*2, cond_dim, use_attention=True)
+        )
+        self.enc3 = CondSequential(
+            ImprovedResBlock(base*2, base*4, cond_dim, use_attention=True),
+            ImprovedResBlock(base*4, base*4, cond_dim, use_attention=True)
+        )
+        self.enc4 = CondSequential(
+            ImprovedResBlock(base*4, base*8, cond_dim, use_attention=True),
+            ImprovedResBlock(base*8, base*8, cond_dim, use_attention=True)
+        )
+
+        # ─── Bottleneck ────────────────────────────────────────────
+        self.mid = CondSequential(
+            ImprovedResBlock(base*8, base*8, cond_dim, use_attention=True),
+            ImprovedResBlock(base*8, base*8, cond_dim, use_attention=True)
+        )
+
+        # ─── Decoder ───────────────────────────────────────────────
+        self.up1 = nn.ConvTranspose2d(base*8, base*4, 2, 2)
+        self.dec1 = CondSequential(
+            ImprovedResBlock(base*8, base*4, cond_dim, use_attention=True),
+            ImprovedResBlock(base*4, base*4, cond_dim, use_attention=True)
+        )
+
+        self.up2 = nn.ConvTranspose2d(base*4, base*2, 2, 2)
+        self.dec2 = CondSequential(
+            ImprovedResBlock(base*4, base*2, cond_dim, use_attention=True),
+            ImprovedResBlock(base*2, base*2, cond_dim, use_attention=True)
+        )
+
+        self.up3 = nn.ConvTranspose2d(base*2, base, 2, 2)
+        self.dec3 = CondSequential(
+            ImprovedResBlock(base*2, base, cond_dim),
+            ImprovedResBlock(base, base, cond_dim)
+        )
+
+        self.out = nn.Conv2d(base, in_channels, 1)
+
+    def forward(self, x, cond, t, context_mask=0):
+        cond = cond * (1 - context_mask)
+        t_emb = get_timestep_embedding(t, self.time_dim).to(x.device)
+        cond = cond + self.time_embed(t_emb)
+
+        # Encoder
+        e1 = self.enc1(x, cond)
+        e2 = self.enc2(F.avg_pool2d(e1, 2), cond)
+        e3 = self.enc3(F.avg_pool2d(e2, 2), cond)
+        e4 = self.enc4(F.avg_pool2d(e3, 2), cond)
+
+        # Bottleneck
+        h = self.mid(e4, cond)
+
+        # Decoder
+        d1 = self.up1(h)
+        d1 = self.dec1(torch.cat([d1, e3], dim=1), cond)
+
+        d2 = self.up2(d1)
+        d2 = self.dec2(torch.cat([d2, e2], dim=1), cond)
+
+        d3 = self.up3(d2)
+        d3 = self.dec3(torch.cat([d3, e1], dim=1), cond)
+
+        return self.out(d3)
