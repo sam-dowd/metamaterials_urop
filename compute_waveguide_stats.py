@@ -159,7 +159,7 @@ with h5py.File(h5_path, 'r') as f:
     for i in range(0, n_samples, chunk_size):
         chunk = weight_dset[i:i+chunk_size]
         total_weights = np.sum(chunk, axis=1)
-        mask_chunk = (total_weights >= 90) & (total_weights <= 100)
+        mask_chunk = (total_weights >= 75) & (total_weights <= 100)
         valid_indices = np.where(mask_chunk)[0] + i  # shift to global index
         mask_list.append(valid_indices)
         total_samples += len(valid_indices)
@@ -175,6 +175,6 @@ with h5py.File(h5_path, 'r') as f:
     meanm, stdm = batch_log_mean_std(f['neff_train'], indices)
     meanp, stdp = batch_log_mean_std(f['params_train'], indices)
 
-np.savez("waveguide_stats_log_norm_above90.npz", meanw=meanw, stdw=stdw,
+np.savez("waveguide_stats_log_norm_above75.npz", meanw=meanw, stdw=stdw,
          meanm=meanm, stdm=stdm, meanp=meanp, stdp=stdp, indices=indices)
-print("Saved waveguide_stats_log_norm_above90.npz")
+print("Saved waveguide_stats_log_norm_above75.npz")
