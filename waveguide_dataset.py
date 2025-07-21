@@ -9,7 +9,7 @@ def quarter(pattern):
 
 
 class WaveguideDataset(Dataset):
-    def __init__(self, h5_path, stats_path="waveguide_stats_log_norm_above90.npz"):
+    def __init__(self, h5_path, stats_path="waveguide_stats_log_norm_above75.npz"):
         self.h5_path = h5_path
 
         # Load precomputed normalization stats and indices
