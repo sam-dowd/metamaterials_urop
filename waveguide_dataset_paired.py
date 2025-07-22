@@ -8,7 +8,7 @@ def quarter(pattern):
     return pattern[:32, :32]  # downsample to 32x32
 
 
-class WaveguideDataset(Dataset):
+class WaveguideDatasetPaired(Dataset):
     def __init__(self, h5_path, stats_path="waveguide_stats_log_norm_above90.npz"):
         self.h5_path = h5_path
 
