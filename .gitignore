@@ -6,3 +6,4 @@ number_example.ipynb
 data/diffusion_outputs10
 *.pth
 *.png
+*.gif
