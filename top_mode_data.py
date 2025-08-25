@@ -275,7 +275,7 @@ OVERWRITE = True
 # Option A: import cnn/quarter from a module
 # set True if cnn & quarter are already in this script's globals
 USE_LOCAL_OBJECTS = False
-CONTEXT_MODULE = "my_runtime_objects"
+# CONTEXT_MODULE = "my_runtime_objects"
 CNN_NAME = "cnn"
 QUARTER_NAME = "quarter"
 
@@ -294,31 +294,17 @@ def main_vscode():
             f"{OUT_H5} exists. Set OVERWRITE=True or change OUT_H5.")
 
     # get cnn + quarter
-    if USE_LOCAL_OBJECTS:
-        # Expect `cnn` (nn.Module) and `quarter` (callable) to already be defined in this file's globals
-        try:
-            cnn_obj = globals()["cnn"]
-            quarter_fn = globals()["quarter"]
-        except KeyError:
-            raise RuntimeError(
-                "USE_LOCAL_OBJECTS=True but `cnn` and/or `quarter` not found in globals().")
-    else:
-        cnn_obj, quarter_fn = import_runtime(
-            CONTEXT_MODULE, CNN_NAME, QUARTER_NAME)
-
-    cnn_obj.eval()
+    cnn.eval()
     # touch params to ensure device is initialized
-    _ = next(cnn_obj.parameters())
-    print(
-        f"Using cnn from: {'locals' if USE_LOCAL_OBJECTS else CONTEXT_MODULE}")
+    _ = next(cnn.parameters())
 
     with h5py.File(IN_H5, "r") as fin, h5py.File(OUT_H5, "w") as fout:
         # train split
         copy_split(fin, fout, "train", FIXED_PARAM1,
-                   BATCH_SIZE, cnn_obj, quarter_fn)
+                   BATCH_SIZE, cnn, quarter)
         # test split
         copy_split(fin, fout, "test",  FIXED_PARAM1,
-                   BATCH_SIZE, cnn_obj, quarter_fn)
+                   BATCH_SIZE, cnn, quarter)
 
         # provenance
         meta = fout.create_group("meta")
@@ -326,7 +312,6 @@ def main_vscode():
         meta.attrs["fixed_param1"] = float(FIXED_PARAM1)
         meta.attrs["batch_size"] = int(BATCH_SIZE)
         meta.attrs["overwrite"] = bool(OVERWRITE)
-        meta.attrs["context_source"] = "locals" if USE_LOCAL_OBJECTS else CONTEXT_MODULE
         meta.attrs["cnn_name"] = CNN_NAME
         meta.attrs["quarter_name"] = QUARTER_NAME
 

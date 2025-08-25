@@ -7,3 +7,4 @@ data/diffusion_outputs10
 *.pth
 *.png
 *.gif
+*.h5
