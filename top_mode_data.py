@@ -198,10 +198,10 @@ def copy_split(fin, fout, split: str, fixed_param1: float, batch_size: int, cnn:
     """
     Processes one split: 'train' or 'test'.
     Reads pattern_{split}, params_{split}; writes:
-      pattern_{split} (quartered)
-      params_{split}  (with [:,1] fixed)
-      neff_{split}    (shape [N], float32)
-      weight_{split}  (shape [N], float32)
+      pattern_{split} (quartered, same dtype as source, no compression)
+      params_{split}  (with [:,1] fixed, same dtype as source, no compression)
+      neff_{split}    (single value, dtype matches source if present, else float32)
+      weight_{split}  (single value, dtype matches source if present, else float32)
     """
     patt_key = f"pattern_{split}"
     params_key = f"params_{split}"
@@ -211,56 +211,53 @@ def copy_split(fin, fout, split: str, fixed_param1: float, batch_size: int, cnn:
     if patt_key not in fin or params_key not in fin:
         raise KeyError(f"Missing required datasets for split='{split}'")
 
-    patt_ds = fin[patt_key]      # [N, H, W] or [N, 1, H, W]
-    params_ds = fin[params_key]  # [N, P]
+    patt_ds   = fin[patt_key]      # [N, H, W] or [N, 1, H, W]
+    params_ds = fin[params_key]    # [N, P]
     N = patt_ds.shape[0]
 
-    # Load all params (we need RAW for CNN; and we also write a modified copy)
-    params_np = params_ds[...].astype(np.float32)
+    # Source dtypes (to preserve on write)
+    patt_dtype   = patt_ds.dtype
+    params_dtype = params_ds.dtype
+    neff_dtype   = fin[neff_key].dtype   if neff_key   in fin else np.float32
+    weight_dtype = fin[weight_key].dtype if weight_key in fin else np.float32
+
+    # Load all params (RAW for cnn + we write a modified copy)
+    params_np = params_ds[...]  # DO NOT cast; keep original dtype
     if params_np.shape[1] < 2:
         raise ValueError("params must have at least 2 columns to set index 1")
 
-    # Load patterns in streaming chunks to control memory
-    # We'll pull patterns by batch inside batched_predict
-    # But many h5py backends prefer contiguous slicing; we'll read large contiguous blocks.
-    # Simpler: read all patterns at once (common case). If memory is a concern, you can chunk this.
+    # Load all patterns (common case). If memory is a concern, chunk this.
     patt_np = patt_ds[...]
 
     # Predict from RAW params (as requested)
-    pattern_q_all, neff_all, weight_all = batched_predict(
+    # batched_predict returns float32 neff/weight; we'll cast to desired dtype on write.
+    pattern_q_all, neff_all_f32, weight_all_f32 = batched_predict(
         cnn=cnn,
         quarter_fn=quarter_fn,
         patterns=patt_np,
-        params=params_np,
+        params=params_np.astype(np.float32, copy=False),  # cnn expects float
         batch_size=batch_size,
     )
 
-    # Write quartered patterns
-    fout.create_dataset(patt_key, data=pattern_q_all, compression="gzip")
+    # -------- Write outputs (NO compression, contiguous), preserving dtypes --------
+    # 1) pattern_* : cast to source pattern dtype
+    fout.create_dataset(patt_key, data=pattern_q_all.astype(patt_dtype, copy=False))
 
-    # Write fixed params copy
-    # Write params copy with per-sample computed value:
-    # params_out[:, 1] = FIXED_PARAM1 / params_raw[:, 0]
+    # 2) params_*  : copy, then set column 1 = fixed_param1 / params[:,0] (compute in float64, cast back)
     params_out = params_np.copy()
-    den = params_np[:, 0].astype(np.float32)
+    den = params_np[:, 0].astype(np.float64, copy=False)
+    eps = np.finfo(np.float64).eps
+    den_safe = np.where(den != 0.0, den, eps)
+    new_col1 = (np.float64(fixed_param1) / den_safe)
 
-    # Guard for zeros in the 0th param
-    eps = np.finfo(np.float32).eps
-    num_zeros = int((den == 0.0).sum())
-    if num_zeros > 0:
-        print(
-            f"[WARN] {num_zeros} samples have params[:,0] == 0. Replacing with eps to avoid divide-by-zero.")
+    # cast computed values back to the original dtype of params
+    params_out = params_out.astype(params_dtype, copy=False)
+    params_out[:, 1] = new_col1.astype(params_dtype, copy=False)
+    fout.create_dataset(params_key, data=params_out)
 
-    safe_den = np.where(den != 0.0, den, eps).astype(np.float32)
-    params_out[:, 1] = float(fixed_param1) / safe_den  # per-sample value
-
-    fout.create_dataset(params_key, data=params_out, compression="gzip")
-
-    # Write single-value neff/weight
-    fout.create_dataset(neff_key, data=neff_all,
-                        dtype="f4", compression="gzip")
-    fout.create_dataset(weight_key, data=weight_all,
-                        dtype="f4", compression="gzip")
+    # 3) neff_*, weight_* : cast to source dtype (if present), else float32
+    fout.create_dataset(neff_key,   data=neff_all_f32.astype(neff_dtype,   copy=False))
+    fout.create_dataset(weight_key, data=weight_all_f32.astype(weight_dtype, copy=False))
 
 
 # =========================
