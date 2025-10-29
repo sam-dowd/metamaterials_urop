@@ -51,3 +51,6 @@ dispersion_curves_scripts/
 GAN_tests_folder/
 models/
 Failed_/
+
+# -- Explicitley UNIGNORED Files --
+!CollectData_expanded2.h5
