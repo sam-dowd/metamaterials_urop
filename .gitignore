@@ -1,10 +1,53 @@
-train_test_split.h5
-Progress Pics
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# # --- Jupyter ---
 .ipynb_checkpoints/
-.DS_Store
-number_example.ipynb
-data/diffusion_outputs10
-*.pth
-*.png
-*.gif
+*.ipynb_checkpoints
+
+# --- Data and model artifacts ---
+data/
+runs/
+datasets/
 *.h5
+*.npz
+*.npy
+*.pt
+*.pth
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.zip
+*.tar
+*.gz
+
+# --- Mac/Windows system files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editor/IDE ---
+.vscode/
+.idea/
+
+# --- Miscellaneous project folders ---
+Progress Pics/
+waveguide_stats_folder/
+past_cnn_models/
+past_diffusion_models/
+dataset_analysis_folder/
+dataset_classes/
+dataset_creation_scripts/
+dispersion_curves_scripts/
+GAN_tests_folder/
+models/
+Failed_/
