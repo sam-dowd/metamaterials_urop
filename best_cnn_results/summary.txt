@@ -1,0 +1,9 @@
+avg_loss_per_waveguide (total dataset loss / #waveguides): 0.0226056319392
+avg_loss_per_item (total dataset loss / #items): 0.000941901330802
+N_waveguides: 1195
+N_items: 28680
+items_per_waveguide_distribution: {24: 1195}
+MODE_INDEX: 0
+TOPW_AGG: mean
+H5_PATH: data/repacked_waveguides_devectorized_train_val_test.h5
+CKPT: scaling_no_groupnorm_t1/best_filmcnn_topmode_80pct.pth

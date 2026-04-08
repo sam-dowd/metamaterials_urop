@@ -1,0 +1,19 @@
+section,name,shape,dtype,value,notes
+h5,h5_path,,,data/repacked_waveguides_sorted.h5,
+h5,modes_test,"(1195, 24, 4)",float32,,
+h5,modes_train,"(2788, 24, 4)",float32,,
+h5,params_test,"(1195, 24, 4)",float32,,
+h5,params_train,"(2788, 24, 4)",float32,,
+h5,pattern_test,"(1195, 32, 32)",float32,,
+h5,pattern_train,"(2788, 32, 32)",float32,,
+h5,weights_test,"(1195, 24, 4)",float32,,
+h5,weights_train,"(2788, 24, 4)",float32,,
+dataset,len(ds) [train],,,2788,
+dataset,ds[0].pattern,"(1, 32, 32)",torch.float32,"[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]",torch tensor returned by __getitem__
+dataset,ds[0].params,"(24, 4)",torch.float32,"[1.2922089099884033, 0.309547483921051, 2.130000114440918, 11.90250015258789, 1.3034454584121704, 0.3068789541721344, 2.130000114440918, 11.90250015258789, 1.3148791790008545, 0.30421045422554016]",torch tensor returned by __getitem__
+dataset,ds[0].modes,"(24, 4)",torch.float32,"[3.8911070823669434, 1.9717930555343628, 7.068181037902832, 41.22637176513672, 3.844984292984009, 2.088808536529541, 7.251363277435303, 41.93395233154297, 3.802035093307495, 2.211843490600586]",torch tensor returned by __getitem__
+dataset,ds[0].weights,"(24, 4)",torch.float32,"[0.9767420291900635, 2.7177588890481275e-06, 1.421136719415017e-08, 2.0114519429625943e-05, 0.9771233797073364, 1.462273758079391e-06, 1.4653700475264486e-08, 1.3514733836927917e-05, 0.97895747423172, 1.3872898989575333e-06]",torch tensor returned by __getitem__
+loader,batch.pattern,"(8, 1, 32, 32)",torch.float32,,"split=train, batch_size=8, num_workers=0"
+loader,batch.params,"(8, 24, 4)",torch.float32,,
+loader,batch.modes,"(8, 24, 4)",torch.float32,,
+loader,batch.weights,"(8, 24, 4)",torch.float32,"[0.9767420291900635, 2.7177588890481275e-06, 1.421136719415017e-08, 2.0114519429625943e-05, 0.9771233797073364, 1.462273758079391e-06, 1.4653700475264486e-08, 1.3514733836927917e-05, 0.97895747423172, 1.3872898989575333e-06]",preview of first few weight values

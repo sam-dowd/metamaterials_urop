@@ -14,21 +14,8 @@ env/
 *.ipynb_checkpoints
 
 # --- Data and model artifacts ---
-data/
-runs/
-datasets/
 *.h5
-*.npz
-*.npy
-*.pt
 *.pth
-*.gif
-*.png
-*.jpg
-*.jpeg
-*.zip
-*.tar
-*.gz
 
 # --- Mac/Windows system files ---
 .DS_Store
@@ -38,19 +25,3 @@ desktop.ini
 # --- Editor/IDE ---
 .vscode/
 .idea/
-
-# --- Miscellaneous project folders ---
-Progress Pics/
-waveguide_stats_folder/
-past_cnn_models/
-past_diffusion_models/
-dataset_analysis_folder/
-dataset_classes/
-dataset_creation_scripts/
-dispersion_curves_scripts/
-GAN_tests_folder/
-models/
-Failed_/
-
-# -- Explicitley UNIGNORED Files --
-!CollectData_expanded2.h5

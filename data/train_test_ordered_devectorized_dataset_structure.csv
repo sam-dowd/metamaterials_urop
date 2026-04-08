@@ -1,0 +1,36 @@
+section,name,shape,dtype,value,notes
+h5,h5_path,,,data/repacked_waveguides_devectorized_train_val_test.h5,
+h5,/train,,,,group
+h5,/train/modes,"(56880, 4)",float32,,
+h5,/train/params,"(56880, 4)",float32,,
+h5,/train/pattern,"(56880, 32, 32)",float32,,
+h5,/train/waveguide_id,"(56880,)",int64,,
+h5,/train/weights,"(56880, 4)",float32,,
+h5,/train/wl_index,"(56880,)",int64,,
+h5,/val,,,,group
+h5,/val/modes,"(10032, 4)",float32,,
+h5,/val/params,"(10032, 4)",float32,,
+h5,/val/pattern,"(10032, 32, 32)",float32,,
+h5,/val/waveguide_id,"(10032,)",int64,,
+h5,/val/weights,"(10032, 4)",float32,,
+h5,/val/wl_index,"(10032,)",int64,,
+h5,/test,,,,group
+h5,/test/modes,"(28680, 4)",float32,,
+h5,/test/params,"(28680, 4)",float32,,
+h5,/test/pattern,"(28680, 32, 32)",float32,,
+h5,/test/waveguide_id,"(28680,)",int64,,
+h5,/test/weights,"(28680, 4)",float32,,
+h5,/test/wl_index,"(28680,)",int64,,
+dataset,len(ds) [train],,,56880,
+dataset,ds[0].pattern,"(1, 32, 32)",torch.float32,"[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]",torch tensor returned by __getitem__
+dataset,ds[0].params,"(4,)",torch.float32,"[1.362692952156067, 0.29353639483451843, 2.130000114440918, 11.90250015258789]",torch tensor returned by __getitem__
+dataset,ds[0].modes,"(4,)",torch.float32,"[3.2658259868621826, 0.8066660165786743, 9.551867485046387, 29.674272537231445]",torch tensor returned by __getitem__
+dataset,ds[0].weights,"(4,)",torch.float32,"[0.9868519306182861, 3.1657706131227314e-05, 5.462357535179763e-07, 5.777447427135485e-07]",torch tensor returned by __getitem__
+dataset,ds[0].waveguide_id,,int,267,metadata (original waveguide index within split source array)
+dataset,ds[0].wl_index,,int,6,metadata (0..23)
+loader,batch.pattern,"(8, 1, 32, 32)",torch.float32,,"split=train, batch_size=8, num_workers=0"
+loader,batch.params,"(8, 4)",torch.float32,,
+loader,batch.modes,"(8, 4)",torch.float32,,
+loader,batch.weights,"(8, 4)",torch.float32,"[0.9868519306182861, 3.1657706131227314e-05, 5.462357535179763e-07, 5.777447427135485e-07, 0.975538432598114, 3.545858135112212e-06, 2.8004238927792358e-08, 5.765456990047824e-06, 0.9858993291854858, 1.82088186306828e-07]",preview of first few weight values
+loader,batch.waveguide_id,"(8,)",torch.int64,"[267, 1177, 1591, 1665, 1369, 2664, 16, 1592]",metadata batch
+loader,batch.wl_index,"(8,)",torch.int64,"[6, 6, 9, 20, 20, 15, 8, 16]",metadata batch
